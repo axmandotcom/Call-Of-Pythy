@@ -13,7 +13,8 @@ from utils import *
 pygame.init()
 WIDTH, HEIGHT = 800, 800
 clock = pygame.time.Clock()
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.HWSURFACE
+WIN = pygame.display.set_mode((WIDTH, HEIGHT), flags)
 title = pygame.display.set_caption("Call of Pythy")
 #Entities
 class Character:
@@ -112,7 +113,7 @@ while not game_over:
     #print(movement_timer)
     #print(shotgun_timer)
     #print(rifle_timer)
-    print(f"This frame took {frame} miliseconds")
+    #print(f"This frame took {frame} miliseconds")
     
     WIN.fill(RED)
     font = pygame.font.SysFont('comicsans', fontsize)
@@ -127,16 +128,16 @@ while not game_over:
     if keys[pygame.K_q]:
         game_over = True
     #Directions and moving:
-    if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT] and movement_timer >= frame:
+    if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
         angle -= angle_offset*(frame/1000)
         TRIANGLE[1:3] = [rotate_point(position, vertex, -angle_offset*(frame/1000)) for vertex in TRIANGLE[1:3]]          
-    if keys[pygame.K_RIGHT] and not keys[pygame.K_LEFT] and movement_timer >= frame:
+    if keys[pygame.K_RIGHT] and not keys[pygame.K_LEFT]:
         angle += angle_offset*(frame/1000)
         TRIANGLE[1:3] = [rotate_point(position, vertex, angle_offset*(frame/1000)) for vertex in TRIANGLE[1:3]]
-    if keys[pygame.K_UP] and movement_timer >= frame:
+    if keys[pygame.K_UP]:
         position = move(position, movement*(frame/1000), angle)
         TRIANGLE = [move(vertex, movement*(frame/1000), angle) for vertex in TRIANGLE]
-    if keys[pygame.K_DOWN] and movement_timer >= frame:
+    if keys[pygame.K_DOWN]:
         position = move(position, -movement*(frame/1000), angle)
         TRIANGLE = [move(vertex, -movement*(frame/1000), angle) for vertex in TRIANGLE]
     
@@ -153,7 +154,7 @@ while not game_over:
             if rifle_fire_rate >= 2:
                 rifle_fire_rate -= 1
     #Sound effects:
-    if auto_fire_playing and (1000/rifle_fire_rate) < 200 and general_timer > 99:
+    if auto_fire_playing and (1000/rifle_fire_rate) < 200 and general_timer > 50:
         general_timer = 0
         auto_fire.play(loops = 0, maxtime = 100)
         auto_fire_playing = False
@@ -165,9 +166,9 @@ while not game_over:
     if keys[pygame.K_s] and not keys[pygame.K_f] and not shotgun_fired:
         shotgun_fired = True
         shotgun_timer = 0
-        for n in range(5):
+        for n in range(shotgun_bullets_per_shot):
             bullets_fired.append(Ammo(sight, angle + (random.randint(-3*shotgun_accuracy, 3*shotgun_accuracy))))
-        print("Miliseconds since last shell:" + str(shotgun_timer))
+        #print("Miliseconds since last shell:" + str(shotgun_timer))
         if 10000/shotgun_fire_rate >= 1000:
             shotgun.play(loops = 0)
         else:
@@ -234,7 +235,7 @@ while not game_over:
             if movement_timer >= frame and zombie.detection_sight.colliderect(player.face):
                 zombie.position = prosecute(player, zombie, 200*(frame/1000))
     closest_zombie = min([zombie.distance_to_player for zombie in enemies])
-    distance = "Stay away!, distance to zombie is: " + str(closest_zombie)
+    distance = f"Stay away!, distance to zombie is: {closest_zombie}"
     stay_away = font.render(distance, True, YELLOW)
     WIN.blit(stay_away, (WIDTH//2 - stay_away.get_width()//2 , HEIGHT//2 - stay_away.get_height()//2))
 
@@ -242,7 +243,9 @@ while not game_over:
         general_timer = 0
         moved = math.sqrt((initial_position[0] - player.position[0])**2 + (initial_position[1]-player.position[1])**2)
         initial_position = player.position
-        print(f"You have moved {moved} units since the last second")
+        #print(f"You have moved {moved} units since the last second")
+
+    #Timing reset:
     if movement_timer >= frame:
         movement_timer = 0
     if rifle_timer >= round(1000/rifle_fire_rate, 3):
@@ -258,4 +261,4 @@ shotgun_timer = 0
 rifle_timer = 0
 general_timer = 0
 pygame.quit()
-print("There were: " + str(len(bullets_fired)) + " bullets")
+print(f"There were {len(bullets_fired)} on the screen")

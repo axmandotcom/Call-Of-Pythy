@@ -46,12 +46,13 @@ rifle_timer = 0
 shotgun_accuracy = 6
 shotgun_fired = False
 shotgun_timer = 0
-shotgun_fire_rate = 5 #How many shots every 10 seconds
+shotgun_fire_rate = 10 #How many shots every 10 seconds
+shotgun_bullets_per_shot = 5
 seeking_bullets = False
 
 #Initialization:
 bullet_speed = 80/100
-angle_offset = 135
+angle_offset = 180
 game_over = False
 movement_speed = 60
 movement_timer = 0
