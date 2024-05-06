@@ -4,7 +4,7 @@ Created on Fri May  3 21:16:16 2024
 
 @author: Axman
 """
-import pygame, math     
+import pygame, math, sys, os
 def rotate(center, angle, hypotenuse):
     angle = math.radians(angle)
     pos_x = center[0] + math.sin(angle)*hypotenuse
@@ -17,15 +17,19 @@ def move(point, movement, angle):
     horizontal = point[0]+(movement*math.sin(turn))
     vertical = point[1]-(movement*math.cos(turn))
     return (horizontal, vertical)
-"""
-def prosecute(player, zombie, movement):
-    points_angle_x = (player.position[0] - zombie.position[0]) / zombie.distance_to_player
-    points_angle_y = (player.position[1] - zombie.position[1]) / zombie.distance_to_player
-    if player.position != zombie.position:
-        zombie_x = zombie.position[0] + points_angle_x * movement
-        zombie_y = zombie.position[1] + points_angle_y * movement
-    return (zombie_x, zombie_y)"""
 
+def prosecute(target, entity, movement, trigger):
+    distance_to_target = math.sqrt((target.position[0] - entity.position[0])**2 + (target.position[1] - entity.position[1])**2)
+    points_angle_x = (target.position[0] - entity.position[0]) / distance_to_target
+    points_angle_y = (target.position[1] - entity.position[1]) / distance_to_target
+    
+    entity_x = entity.position[0] + points_angle_x * 0
+    entity_y = entity.position[1] + points_angle_y * 0
+    if distance_to_target < trigger:
+        entity_x = entity.position[0] + points_angle_x * movement
+        entity_y = entity.position[1] + points_angle_y * movement
+    return (entity_x, entity_y)
+"""
 def prosecute(target, entity, movement):
     #Move the zombie towards the player.
     # Calculate vector from zombie to player
@@ -42,7 +46,7 @@ def prosecute(target, entity, movement):
         return new_position.x, new_position.y
     else:
         # If the distance is less than movement, move directly to player's position
-        return target.position
+        return target.position"""
 def rotate_point(center, point, angle):
     #Rotate a point counterclockwise by a given angle around a given origin.
     angle = math.radians(angle)
@@ -52,3 +56,13 @@ def rotate_point(center, point, angle):
     qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
     qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
     return qx, qy
+
+#Function to call resources the right way
+def resource_path(relative_path):
+    try:
+        # PyInstaller creates a normal tmp folder and stores the path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)

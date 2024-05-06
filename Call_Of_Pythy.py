@@ -5,7 +5,7 @@ Created on Tue Apr 23 07:04:07 2024
 @author: Axman
 """
 
-import pygame, math, random
+import pygame, math, random, sys, os
 from settings import *
 from utils import *
 #from entities import Character, Enemy
@@ -34,7 +34,7 @@ class Enemy:
         #self.face = pygame.draw.polygon(WIN, GREEN)
         self.box = pygame.draw.circle(WIN, self.color, self.position, radius = self.size)
         self.sight_vertices = [self.position, ((self.position[0] - size),(self.position[1] - 4*size)), ((self.position[0] + size),(self.position[1] - 4*size))]
-        self.detection_sight = pygame.draw.polygon(WIN, BLACK, self.sight_vertices)
+        #self.detection_sight = pygame.draw.polygon(WIN, BLACK, self.sight_vertices)
         self.distance_to_player = math.sqrt((self.position[0] - player.position[0])**2 + (self.position[1] - player.position[1])**2)
         self.distance_to_player = round(self.distance_to_player, 3)
 
@@ -72,21 +72,21 @@ right_sightpoint_angle = math.degrees((TRIANGLE[2][0] - TRIANGLE[0][0]) / sight_
 
 #Sounds:
 #Weapons:
-auto_fire = pygame.mixer.Sound('Game_machine_gun.ogg')
+auto_fire = pygame.mixer.Sound(resource_path('Game_machine_gun.ogg'))
 auto_fire_playing = False
 auto_fire.set_volume(0.6)
 
-single_shot = pygame.mixer.Sound('Gun_shot.ogg')
+single_shot = pygame.mixer.Sound(resource_path('Gun_shot.ogg'))
 single_shot_playing = False
 single_shot.set_volume(0.5)
 
-shotgun = pygame.mixer.Sound('shotgun_echo.ogg')
+shotgun = pygame.mixer.Sound(resource_path('shotgun_echo.ogg'))
 shotgun.set_volume(0.6)
 #Music soundtracks
-BGM_music = pygame.mixer.music.load('Graveyard_Shift.ogg') #('Graveyard_Shift.mp3')
+BGM_music = pygame.mixer.music.load(resource_path('Graveyard_Shift.ogg'))
 
 #Environmental sound effects:
-zombie_death = pygame.mixer.Sound('Zombie_killed.ogg')
+zombie_death = pygame.mixer.Sound(resource_path('Zombie_killed.ogg'))
 zombie_death.set_volume(0.7)
 #Initializing Entities:
 bullets_fired = []
@@ -113,7 +113,7 @@ while not game_over:
     #print(movement_timer)
     #print(shotgun_timer)
     #print(rifle_timer)
-    #print(f"This frame took {frame} miliseconds")
+    print(f"This frame took {frame} miliseconds")
     
     WIN.fill(RED)
     font = pygame.font.SysFont('comicsans', fontsize)
@@ -223,7 +223,8 @@ while not game_over:
                         zombie_death.play()
                         enemies.remove(zombie)
             if len(enemies) == 0:
-                enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
+                for n in range(random.randint(1,5)):
+                    enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
   
     WIN.blit(text, (position[0] - text.get_width()//2, position[1] - text.get_height()//2))
     closest_zombie = 0   
@@ -231,9 +232,7 @@ while not game_over:
     #Prosecution Trigger
     if len(enemies) > 0:
         for zombie in enemies:
-            #if zombie.distance_to_player < 200 and movement_timer >= (1000/movement_speed):
-            if movement_timer >= frame and zombie.detection_sight.colliderect(player.face):
-                zombie.position = prosecute(player, zombie, 200*(frame/1000))
+            zombie.position = prosecute(player, zombie, 150*(frame/1000), 200)
     closest_zombie = min([zombie.distance_to_player for zombie in enemies])
     distance = f"Stay away!, distance to zombie is: {closest_zombie}"
     stay_away = font.render(distance, True, YELLOW)
