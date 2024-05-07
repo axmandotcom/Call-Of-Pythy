@@ -46,12 +46,8 @@ class Ammo:
         self.velocity = 3
         self.index = len(bullets_fired)
         self.box = pygame.draw.circle(WIN, YELLOW, self.position, radius = 5)
-    def draw(self, position, angle, velocity):
-        if not seeking_bullets:
-            self.position = move(position, velocity, angle)
-        else:
-            self.position = prosecute(zombie, self, velocity/2)
-        self.box = pygame.draw.circle(WIN, YELLOW, self.position, radius = 5)
+    def draw(self, position):
+        self.box = pygame.draw.circle(WIN, YELLOW, position, radius = 5)
 
 #Geometric points
 position = (WIDTH/2, HEIGHT/2)
@@ -93,8 +89,8 @@ bullets_fired = []
 enemies = []    
 sight = rotate(position, angle, size)
 player = Character(sight, size, position)
-enemies.append(Enemy(enemy_pos, size, player, starting_life))
-enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
+#enemies.append(Enemy(enemy_pos, size, player, starting_life))
+#enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
 #sight_vertices = [zombie.position, ((zombie.position[0] - size),(zombie.position[1] - 3*size)), ((zombie.position[0] + size),(zombie.position[1] - 3*size))]
 #BGM_music.play()
 pygame.mixer.music.set_volume(0.4)
@@ -182,7 +178,7 @@ while not game_over:
     #print("There are: " + str(len(bullets_fired)) + " bullets on the screen")
     
     #Reset_Game_State
-    if keys[pygame.K_r]:
+    if keys[pygame.K_r] and len(enemies) > 0:
         bullets_fired.clear()
         angle = 0
         position = (WIDTH/2, HEIGHT/2)
@@ -208,21 +204,47 @@ while not game_over:
     if len(bullets_fired) > 0:
         for bullet in bullets_fired:
             bullet.velocity = bullet_speed*(frame)
-            bullet.draw(bullet.position, bullet.angle, bullet.velocity)
+            if not seeking_bullets:
+                bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
+            elif seeking_bullets and len(enemies) > 0:
+                for zombie in enemies:
+                    if distance_trigger(zombie, bullet, 200):
+                        bullet.position = prosecute(zombie, bullet, bullet.velocity)
+                    else:
+                        bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
+            elif seeking_bullets and len(enemies) == 0:
+                bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
+            bullet.draw(bullet.position)
             #Destroying bullets out of out of the screen
             if bullet.position[0] < 0 or bullet.position[0] > WIDTH or bullet.position[1] < 0 or bullet.position[1] > HEIGHT:
                 bullets_fired.remove(bullet)
                 continue
+            #Destroying bullets if colliding wiht any zombie
+            zombieboxes = [zombie.box for zombie in enemies]
+            collision_index = -1
+            if bullet.box.collidelist(zombieboxes) != -1:
+                collision_index = bullet.box.collidelist(zombieboxes)
+                enemies[bullet.box.collidelist(zombieboxes)].life -= bullet.damage
+                bullets_fired.remove(bullet)
+            if collision_index != -1 and enemies[collision_index].life <= 0:
+                enemies.pop(collision_index)
+                collision_index = -1
+                continue
+            """
             #Destroying enemies
             if len(enemies) > 0:
                 for zombie in enemies:
+                    if seeking_bullets:
+                        bullet.position = prosecute(zombie, bullet, bullet.velocity)
+                        bullet.draw(bullet.position)
                     if bullet.box.colliderect(zombie.box):
                         zombie.life -= bullet.damage
                         bullets_fired.remove(bullet)
                     if zombie.life <= 0:
                         zombie_death.play()
                         enemies.remove(zombie)
-            if len(enemies) == 0:
+                        continue"""
+            if len(enemies) == 0 and keys[pygame.K_r]:
                 for n in range(random.randint(1,5)):
                     enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
   
@@ -232,11 +254,13 @@ while not game_over:
     #Prosecution Trigger
     if len(enemies) > 0:
         for zombie in enemies:
-            zombie.position = prosecute(player, zombie, 150*(frame/1000), 200)
-    closest_zombie = min([zombie.distance_to_player for zombie in enemies])
-    distance = f"Stay away!, distance to zombie is: {closest_zombie}"
-    stay_away = font.render(distance, True, YELLOW)
-    WIN.blit(stay_away, (WIDTH//2 - stay_away.get_width()//2 , HEIGHT//2 - stay_away.get_height()//2))
+            if distance_trigger(player, zombie, 200):
+                zombie.position = prosecute(player, zombie, 150*(frame/1000))
+    if len(enemies) > 0:
+        closest_zombie = min([zombie.distance_to_player for zombie in enemies])
+        distance = f"Stay away!, distance to zombie is: {closest_zombie}"
+        stay_away = font.render(distance, True, YELLOW)
+        WIN.blit(stay_away, (WIDTH//2 - stay_away.get_width()//2 , HEIGHT//2 - stay_away.get_height()//2))
 
     if general_timer >= 1000:
         general_timer = 0

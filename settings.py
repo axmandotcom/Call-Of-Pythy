@@ -48,7 +48,7 @@ shotgun_fired = False
 shotgun_timer = 0
 shotgun_fire_rate = 10 #How many shots every 10 seconds
 shotgun_bullets_per_shot = 5
-seeking_bullets = False
+seeking_bullets = True
 
 #Initialization:
 bullet_speed = 80/100

@@ -18,35 +18,46 @@ def move(point, movement, angle):
     vertical = point[1]-(movement*math.cos(turn))
     return (horizontal, vertical)
 
-def prosecute(target, entity, movement, trigger):
+def prosecute(target, entity, movement):
     distance_to_target = math.sqrt((target.position[0] - entity.position[0])**2 + (target.position[1] - entity.position[1])**2)
     points_angle_x = (target.position[0] - entity.position[0]) / distance_to_target
     points_angle_y = (target.position[1] - entity.position[1]) / distance_to_target
+    #points_angle_x = (entity.position[0] - target.position[0]) / distance_to_target
+    #points_angle_y = (entity.position[1] - target.position[1]) / distance_to_target
     
-    entity_x = entity.position[0] + points_angle_x * 0
-    entity_y = entity.position[1] + points_angle_y * 0
-    if distance_to_target < trigger:
-        entity_x = entity.position[0] + points_angle_x * movement
-        entity_y = entity.position[1] + points_angle_y * movement
+    entity_x = entity.position[0] + points_angle_x * movement
+    entity_y = entity.position[1] + points_angle_y * movement
     return (entity_x, entity_y)
-"""
+
+def distance_trigger(target, entity, trigger_distance):
+    distance_to_target = math.sqrt((target.position[0] - entity.position[0])**2 + (target.position[1] - entity.position[1])**2)
+    if distance_to_target < trigger_distance:
+        return True
+    else:
+        return False
+"""    
 def prosecute(target, entity, movement):
     #Move the zombie towards the player.
     # Calculate vector from zombie to player
-    vector_to_player = pygame.Vector2(target.position) - pygame.Vector2(entity.position)
+    vector_to_target = pygame.Vector2(target.position) - pygame.Vector2(entity.position)
 
     # If the distance is greater than movement, move directly towards player
-    if vector_to_player.length() > movement:
+    if vector_to_target.length() > movement:
         # Scale the vector to the desired movement
-        movement_vector = vector_to_player.normalize() * movement
-
+        movement_vector = vector_to_target.normalize() * movement
+    
         # Move the zombie
         new_position = pygame.Vector2(entity.position) + movement_vector
-
+    
         return new_position.x, new_position.y
     else:
-        # If the distance is less than movement, move directly to player's position
+        #If the distance is less than movement, move directly to target's position
         return target.position"""
+    
+def two_points_distance(point1, point2):
+    distance = math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+    return distance
+
 def rotate_point(center, point, angle):
     #Rotate a point counterclockwise by a given angle around a given origin.
     angle = math.radians(angle)
