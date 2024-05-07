@@ -37,11 +37,11 @@ def distance_trigger(target, entity, trigger_distance):
         return False
 """    
 def prosecute(target, entity, movement):
-    #Move the zombie towards the player.
-    # Calculate vector from zombie to player
+    #Move the entity towards the target.
+    # Calculate vector from entity to target
     vector_to_target = pygame.Vector2(target.position) - pygame.Vector2(entity.position)
 
-    # If the distance is greater than movement, move directly towards player
+    # If the distance is greater than movement, move directly towards target
     if vector_to_target.length() > movement:
         # Scale the vector to the desired movement
         movement_vector = vector_to_target.normalize() * movement
@@ -57,6 +57,13 @@ def prosecute(target, entity, movement):
 def two_points_distance(point1, point2):
     distance = math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
     return distance
+
+#This functions is supposed to change the angle of a bullet when they're homming bullets
+def angle_changed(reference, origin):
+    angle_x = (reference[0] - origin[0])/two_points_distance(reference, origin)
+    angle_y = (reference[1] - origin[1])/two_points_distance(reference, origin)
+    total_angle = math.degrees(angle_x + angle_y)
+    return total_angle
 
 def rotate_point(center, point, angle):
     #Rotate a point counterclockwise by a given angle around a given origin.

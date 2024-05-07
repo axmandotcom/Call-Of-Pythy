@@ -40,14 +40,15 @@ class Enemy:
 
 class Ammo:
     def __init__(self, position, angle):
+        self.size = 5
         self.damage = 20
         self.position = position
         self.angle = angle
         self.velocity = 3
         self.index = len(bullets_fired)
-        self.box = pygame.draw.circle(WIN, YELLOW, self.position, radius = 5)
+        self.box = pygame.draw.circle(WIN, YELLOW, self.position, radius = self.size)
     def draw(self, position):
-        self.box = pygame.draw.circle(WIN, YELLOW, position, radius = 5)
+        self.box = pygame.draw.circle(WIN, YELLOW, position, radius = self.size)
 
 #Geometric points
 position = (WIDTH/2, HEIGHT/2)
@@ -79,7 +80,7 @@ single_shot.set_volume(0.5)
 shotgun = pygame.mixer.Sound(resource_path('shotgun_echo.ogg'))
 shotgun.set_volume(0.6)
 #Music soundtracks
-BGM_music = pygame.mixer.music.load(resource_path('Graveyard_Shift.ogg'))
+BGM_music = pygame.mixer.Sound(resource_path('Graveyard_Shift.ogg'))
 
 #Environmental sound effects:
 zombie_death = pygame.mixer.Sound(resource_path('Zombie_killed.ogg'))
@@ -89,12 +90,13 @@ bullets_fired = []
 enemies = []    
 sight = rotate(position, angle, size)
 player = Character(sight, size, position)
-#enemies.append(Enemy(enemy_pos, size, player, starting_life))
-#enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
+enemies.append(Enemy(enemy_pos, size, player, starting_life))
+enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
 #sight_vertices = [zombie.position, ((zombie.position[0] - size),(zombie.position[1] - 3*size)), ((zombie.position[0] + size),(zombie.position[1] - 3*size))]
-#BGM_music.play()
-pygame.mixer.music.set_volume(0.4)
-pygame.mixer.music.play()
+BGM_music.set_volume(0.4)
+BGM_music.play(loops = -1)
+#pygame.mixer.music.set_volume(0.4)
+#pygame.mixer.music.play()
 initial_position = player.position
 #Main game loop
 while not game_over:
@@ -109,7 +111,7 @@ while not game_over:
     #print(movement_timer)
     #print(shotgun_timer)
     #print(rifle_timer)
-    print(f"This frame took {frame} miliseconds")
+    #print(f"This frame took {frame} miliseconds")
     
     WIN.fill(RED)
     font = pygame.font.SysFont('comicsans', fontsize)
@@ -204,50 +206,29 @@ while not game_over:
     if len(bullets_fired) > 0:
         for bullet in bullets_fired:
             bullet.velocity = bullet_speed*(frame)
+            zombie_to_bullet_distances = [two_points_distance(bullet.position, zombie.position) for zombie in enemies]
+            smallest_zombie_distance = min(zombie_to_bullet_distances)
+            nearest_zombie_index = zombie_to_bullet_distances.index(smallest_zombie_distance)
             if not seeking_bullets:
                 bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
-            elif seeking_bullets and len(enemies) > 0:
-                for zombie in enemies:
-                    if distance_trigger(zombie, bullet, 200):
-                        bullet.position = prosecute(zombie, bullet, bullet.velocity)
-                    else:
-                        bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
-            elif seeking_bullets and len(enemies) == 0:
-                bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
-            bullet.draw(bullet.position)
-            #Destroying bullets out of out of the screen
+                bullet.draw(bullet.position)
+            else:
+                bullet.draw(bullet.position)
+                if smallest_zombie_distance < 200:
+                    bullet.position = prosecute(enemies[nearest_zombie_index], bullet, bullet.velocity)
+                    if two_points_distance(bullet.position, enemies[nearest_zombie_index].position) < enemies[nearest_zombie_index].size:
+                        enemies[nearest_zombie_index].life -= bullet.damage
+                        bullets_fired.remove(bullet)
+                        if enemies[nearest_zombie_index].life <= 0:
+                            enemies.pop(nearest_zombie_index)
+                        if len(enemies) == 0:
+                            for n in range(random.randint(1,5)):
+                                enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
+                else:
+                    bullet.position = move(bullet.position, bullet.velocity, bullet.angle)
             if bullet.position[0] < 0 or bullet.position[0] > WIDTH or bullet.position[1] < 0 or bullet.position[1] > HEIGHT:
                 bullets_fired.remove(bullet)
-                continue
-            #Destroying bullets if colliding wiht any zombie
-            zombieboxes = [zombie.box for zombie in enemies]
-            collision_index = -1
-            if bullet.box.collidelist(zombieboxes) != -1:
-                collision_index = bullet.box.collidelist(zombieboxes)
-                enemies[bullet.box.collidelist(zombieboxes)].life -= bullet.damage
-                bullets_fired.remove(bullet)
-            if collision_index != -1 and enemies[collision_index].life <= 0:
-                enemies.pop(collision_index)
-                collision_index = -1
-                continue
-            """
-            #Destroying enemies
-            if len(enemies) > 0:
-                for zombie in enemies:
-                    if seeking_bullets:
-                        bullet.position = prosecute(zombie, bullet, bullet.velocity)
-                        bullet.draw(bullet.position)
-                    if bullet.box.colliderect(zombie.box):
-                        zombie.life -= bullet.damage
-                        bullets_fired.remove(bullet)
-                    if zombie.life <= 0:
-                        zombie_death.play()
-                        enemies.remove(zombie)
-                        continue"""
-            if len(enemies) == 0 and keys[pygame.K_r]:
-                for n in range(random.randint(1,5)):
-                    enemies.append(Enemy(((random.randint(0, WIDTH)),(random.randint(0, HEIGHT))), size, player, starting_life))
-  
+                
     WIN.blit(text, (position[0] - text.get_width()//2, position[1] - text.get_height()//2))
     closest_zombie = 0   
     
@@ -257,9 +238,12 @@ while not game_over:
             if distance_trigger(player, zombie, 200):
                 zombie.position = prosecute(player, zombie, 150*(frame/1000))
     if len(enemies) > 0:
-        closest_zombie = min([zombie.distance_to_player for zombie in enemies])
-        distance = f"Stay away!, distance to zombie is: {closest_zombie}"
-        stay_away = font.render(distance, True, YELLOW)
+        last_frame = f"Last frame took {frame} miliseconds, there are {len(bullets_fired)} on the screen"
+        #zombie_distances = [zombie.distance_to_player for zombie in enemies]
+        #closest_zombie = min(zombie_distances)
+        #zombie_index = zombie_distances.index(closest_zombie)
+        #distance = f"Stay away!, distance to zombie is: {closest_zombie} on index {zombie_index}"
+        stay_away = font.render(last_frame, True, YELLOW)
         WIN.blit(stay_away, (WIDTH//2 - stay_away.get_width()//2 , HEIGHT//2 - stay_away.get_height()//2))
 
     if general_timer >= 1000:
