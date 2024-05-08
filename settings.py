@@ -9,7 +9,7 @@ import math, pygame, random
 WIDTH, HEIGHT = 800, 800
 clock = pygame.time.Clock()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-title = pygame.display.set_caption("Call of Python")
+title = pygame.display.set_caption("Call of Pythy")
 # Define the colors palette"""
 WHITE = (255, 255, 255)
 PINK = (255,150,255)
@@ -58,3 +58,4 @@ movement_speed = 60
 movement_timer = 0
 general_timer = 0
 FPS = 0 #0 means unlimited
+FULL_DISPLAY = False

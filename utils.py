@@ -18,12 +18,10 @@ def move(point, movement, angle):
     vertical = point[1]-(movement*math.cos(turn))
     return (horizontal, vertical)
 
-def prosecute(target, entity, movement):
+def chase(target, entity, movement):
     distance_to_target = math.sqrt((target.position[0] - entity.position[0])**2 + (target.position[1] - entity.position[1])**2)
     points_angle_x = (target.position[0] - entity.position[0]) / distance_to_target
     points_angle_y = (target.position[1] - entity.position[1]) / distance_to_target
-    #points_angle_x = (entity.position[0] - target.position[0]) / distance_to_target
-    #points_angle_y = (entity.position[1] - target.position[1]) / distance_to_target
     
     entity_x = entity.position[0] + points_angle_x * movement
     entity_y = entity.position[1] + points_angle_y * movement
@@ -59,10 +57,10 @@ def two_points_distance(point1, point2):
     return distance
 
 #This functions is supposed to change the angle of a bullet when they're homming bullets
-def angle_changed(reference, origin):
-    angle_x = (reference[0] - origin[0])/two_points_distance(reference, origin)
-    angle_y = (reference[1] - origin[1])/two_points_distance(reference, origin)
-    total_angle = math.degrees(angle_x + angle_y)
+def angle_changed(entity, target):
+    angle_x = (target[0] - entity[0])/two_points_distance(entity, target)
+    angle_y = (target[1] - entity[1])/two_points_distance(entity, target)
+    total_angle = math.degrees(angle_x)
     return total_angle
 
 def rotate_point(center, point, angle):

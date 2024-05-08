@@ -33,7 +33,7 @@ class Enemy:
         self.index = len(enemies)
         #self.face = pygame.draw.polygon(WIN, GREEN)
         self.box = pygame.draw.circle(WIN, self.color, self.position, radius = self.size)
-        self.sight_vertices = [self.position, ((self.position[0] - size),(self.position[1] - 4*size)), ((self.position[0] + size),(self.position[1] - 4*size))]
+        #self.sight_vertices = [self.position, ((self.position[0] - size),(self.position[1] - 4*size)), ((self.position[0] + size),(self.position[1] - 4*size))]
         #self.detection_sight = pygame.draw.polygon(WIN, BLACK, self.sight_vertices)
         self.distance_to_player = math.sqrt((self.position[0] - player.position[0])**2 + (self.position[1] - player.position[1])**2)
         self.distance_to_player = round(self.distance_to_player, 3)
@@ -100,6 +100,8 @@ BGM_music.play(loops = -1)
 initial_position = player.position
 #Main game loop
 while not game_over:
+    HEIGHT = WIN.get_height()
+    WIDTH = WIN.get_width()
     frame = clock.tick_busy_loop(FPS)
     
     #Timers:
@@ -122,9 +124,40 @@ while not game_over:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game_over = True
+        
     #Close game:
     if keys[pygame.K_q]:
         game_over = True
+    if keys[pygame.K_F12] and general_timer >= 1000 and not FULL_DISPLAY:
+        general_timer = 0
+        FULL_DISPLAY = True
+        WIDTH, HEIGHT = 1920, 1080
+        flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.HWSURFACE | pygame.FULLSCREEN
+        WIN = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+        
+        #Characters reallocation on the screen:
+        new_player_x = player.position[0]*(WIDTH/800)
+        new_player_y = player.position[1]*(HEIGHT/800)
+        player.position = (new_player_x, new_player_y)
+        for zombie in enemies:
+            new_zombie_x = zombie.position[0]*(WIDTH/800)
+            new_zombie_y = zombie.position[1]*(HEIGHT/800)
+            zombie.position = (new_zombie_x, new_zombie_y)
+    if keys[pygame.K_F12] and general_timer >= 1000 and FULL_DISPLAY:
+        general_timer = 0
+        FULL_DISPLAY = False
+        WIDTH, HEIGHT = 800, 800
+        flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.HWSURFACE
+        WIN = pygame.display.set_mode((WIDTH, HEIGHT), flags)
+        
+        #Characters reallocation on the screen:
+        new_player_x = player.position[0]*(WIDTH/1920)
+        new_player_y = player.position[1]*(HEIGHT/1080)
+        player.position = (new_player_x, new_player_y)
+        for zombie in enemies:
+            new_zombie_x = zombie.position[0]*(WIDTH/1920)
+            new_zombie_y = zombie.position[1]*(HEIGHT/1080)
+            zombie.position = (new_zombie_x, new_zombie_y)
     #Directions and moving:
     if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
         angle -= angle_offset*(frame/1000)
@@ -151,7 +184,7 @@ while not game_over:
         if keys[pygame.K_MINUS] and not keys[pygame.K_PLUS]:
             if rifle_fire_rate >= 2:
                 rifle_fire_rate -= 1
-    #Sound effects:
+    #Weapon sound effects:
     if auto_fire_playing and (1000/rifle_fire_rate) < 200 and general_timer > 50:
         general_timer = 0
         auto_fire.play(loops = 0, maxtime = 100)
@@ -205,7 +238,9 @@ while not game_over:
     #Drawing/firing bullets:
     if len(bullets_fired) > 0:
         for bullet in bullets_fired:
-            bullet.velocity = bullet_speed*(frame)
+            original = two_points_distance((800,800), (0,0))
+            adjustment = two_points_distance((WIDTH, HEIGHT), (0,0))
+            bullet.velocity = bullet_speed*(frame)*(adjustment/original)
             zombie_to_bullet_distances = [two_points_distance(bullet.position, zombie.position) for zombie in enemies]
             smallest_zombie_distance = min(zombie_to_bullet_distances)
             nearest_zombie_index = zombie_to_bullet_distances.index(smallest_zombie_distance)
@@ -215,7 +250,8 @@ while not game_over:
             else:
                 bullet.draw(bullet.position)
                 if smallest_zombie_distance < 200:
-                    bullet.position = prosecute(enemies[nearest_zombie_index], bullet, bullet.velocity)
+                    bullet.position = chase(enemies[nearest_zombie_index], bullet, bullet.velocity)
+                    #bullet.angle = angle_changed(bullet.position, enemies[nearest_zombie_index].position)
                     if two_points_distance(bullet.position, enemies[nearest_zombie_index].position) < enemies[nearest_zombie_index].size:
                         enemies[nearest_zombie_index].life -= bullet.damage
                         bullets_fired.remove(bullet)
@@ -235,8 +271,10 @@ while not game_over:
     #Prosecution Trigger
     if len(enemies) > 0:
         for zombie in enemies:
+            original = two_points_distance((800,800), (0,0))
+            adjustment = two_points_distance((WIDTH, HEIGHT), (0,0))
             if distance_trigger(player, zombie, 200):
-                zombie.position = prosecute(player, zombie, 150*(frame/1000))
+                zombie.position = chase(player, zombie, 150*(frame/1000))
     if len(enemies) > 0:
         last_frame = f"Last frame took {frame} miliseconds, there are {len(bullets_fired)} on the screen"
         #zombie_distances = [zombie.distance_to_player for zombie in enemies]
